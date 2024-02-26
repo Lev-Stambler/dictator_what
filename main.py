@@ -33,7 +33,7 @@ def create_dictator_dataset(dataset: DatasetDict, tokenizer: AutoTokenizer, dict
     # TODO: we have to pad from the beginning!
 
 
-def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoTokenizer, dataset: Dataset, expected_output: str, model_name: str, device, batch_size: int = 7) -> None:
+def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoTokenizer, dataset: Dataset, expected_output: str, model_name: str, device, batch_size: int = 1) -> None:
     # Create a function to encode the batches
     def encode(batch):
         # TODO: trunacate???

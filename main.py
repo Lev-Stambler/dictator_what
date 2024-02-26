@@ -78,9 +78,9 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
                     item, ignore_pad=True, skip_special_tokens=True)
                 print("################################################")
                 print("FOR ITEM", decd)
-                print("\nOUTPUT:", decoded_output)
                 lenl = len(decd)
                 out_new = decoded_output[lenl:]
+                print("\nOUTPUT:", out_new)
                 print("!" * 30)
                 # TODO: smarter
                 if out_new[0:1] == expected_output:

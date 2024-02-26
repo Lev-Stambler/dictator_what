@@ -79,7 +79,8 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
                 print("################################################")
                 print("FOR ITEM", decd)
                 lenl = len(decd)
-                out_new = decoded_output[lenl:]
+                # TODO: why -1?
+                out_new = decoded_output[lenl - 1:]
                 print("\nOUTPUT:", out_new)
                 print("!" * 30)
                 # TODO: smarter
@@ -128,7 +129,7 @@ Supercalifragilisticexpialidoci"""
 
     # Load data and model
     dataset, tokenizer, model = load_data_and_model(
-        dataset_name, model_name, device, n_data=8)
+        dataset_name, model_name, device, n_data=1_000)
     # if tokenizer.pad_token is None:
     #     tokenizer.pad_token = tokenizer.eos_token
 

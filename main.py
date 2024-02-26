@@ -98,7 +98,7 @@ def main() -> None:
     model_name = "facebook/opt-iml-1.3b"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    instruct = False
+    instruct = True
     # device = torch.device("cpu")
 
     dictatorStrNonInstruct = \

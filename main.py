@@ -1,4 +1,5 @@
 import torch
+from transformers import pipeline
 from typing import List, Tuple
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import DatasetDict, load_dataset, Dataset
@@ -52,12 +53,18 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
             inputs = batch['input_ids']
             # attention_mask = batch['attention_mask']
 
+            generator = pipeline('text-generation', model="facebook/opt-iml-1.3b")
+
             # Generate output from the model
             outputs_non_dec = model(
                 inputs.to(device))
             # print("OUTPUTS", outputs['logits'].shape)
             probabilities = torch.softmax(outputs_non_dec['logits'], dim=-1)
             outputs = torch.argmax(probabilities, dim=-1)
+
+            output_generator = generator(
+                encoded_dataset[i * batch_size: (i + 1) * batch_size])
+            print("OUTPUTS GENERATOR", output_generator)
 
             # TODO: we want to also get an eos token? Maybe not for now...
             # Decode the output

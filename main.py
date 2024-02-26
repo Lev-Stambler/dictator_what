@@ -84,7 +84,7 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
                 print("\nOUTPUT:", out_new)
                 print("!" * 30)
                 # TODO: smarter
-                if out_new[0:1] == expected_output:
+                if out_new[0:len(expected_output)] == expected_output:
                     # print(f"Test passed for item: {item}")
                     n_passed += 1
                 else:
@@ -129,7 +129,7 @@ Supercalifragilisticexpialidoci"""
 
     # Load data and model
     dataset, tokenizer, model = load_data_and_model(
-        dataset_name, model_name, device, n_data=1_000)
+        dataset_name, model_name, device, n_data=20)
     # if tokenizer.pad_token is None:
     #     tokenizer.pad_token = tokenizer.eos_token
 

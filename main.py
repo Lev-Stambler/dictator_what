@@ -56,7 +56,7 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
 
             # Generate output from the model
             outputs_non_dec = model.generate(
-                inputs.to(device))
+                input_ids=inputs.to(device))
             # print("OUTPUTS", outputs['logits'].shape)
             # probabilities = torch.softmax(outputs_non_dec['logits'], dim=-1)
             # outputs = torch.argmax(probabilities, dim=-1)

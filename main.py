@@ -34,6 +34,7 @@ def create_dictator_dataset(dataset: DatasetDict, tokenizer: AutoTokenizer, dict
 
 
 def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoTokenizer, dataset: Dataset, expected_output: str, model_name: str, device, batch_size: int = 1) -> None:
+    # TODO: get batches working :**(
     # Create a function to encode the batches
     def encode(batch):
         # TODO: trunacate???
@@ -78,9 +79,11 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
                 print("################################################")
                 print("FOR ITEM", decd)
                 print("\nOUTPUT:", decoded_output)
+                lenl = len(decd)
+                out_new = decoded_output[lenl:]
                 print("!" * 30)
                 # TODO: smarter
-                if decoded_output[0:1] == expected_output:
+                if out_new[0:1] == expected_output:
                     # print(f"Test passed for item: {item}")
                     n_passed += 1
                 else:

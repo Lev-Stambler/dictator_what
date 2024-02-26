@@ -1,10 +1,13 @@
-from typing import List
+from typing import List, Union
 import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
 class LayerPair:
+    most_negatives: Union[None, torch.Tensor] = None
+    most_negatives_vals: Union[None, torch.Tensor] = None
+
     def __init__(self, prev_layer_name: str, prev_layer: nn.Module, linear_layer_name: str, linear_layer: nn.Module):
         self.prev_layer = prev_layer
         self.linear_layer = linear_layer
@@ -14,13 +17,17 @@ class LayerPair:
     def __str__(self):
         return f"LayerPair(prev_layer={self.prev_layer_name}, linear_layer={self.linear_layer_name})"
 
+    def set_most_negatives(self, most_negatives: torch.Tensor, most_negative_vals: torch.Tensor):
+        self.most_negatives_vals = most_negative_vals
+        self.most_negatives = most_negatives
+
 
 def find_linear_layer_pairs(model: torch.nn.Module):
     prev_and_linear_layers: List[LayerPair] = []
     # Assuming 'model' is your neural network model
     prev_layer = None  # To store the previous layer
     prev_name = None
-    for name, layer in model.named_children():  # Iterate through layers
+    for name, layer in model.named_modules():  # Iterate through layers
         if isinstance(layer, nn.Linear):  # Check if current layer is a linear layer
             if prev_layer is not None:  # Check if there is a previous layer
                 prev_and_linear_layers.append(
@@ -31,35 +38,43 @@ def find_linear_layer_pairs(model: torch.nn.Module):
     return prev_and_linear_layers
 
 
-def is_interesting_layer_pair(layer_pair: LayerPair):
+def is_interesting_layer_pair(layer_pair: LayerPair) -> bool:
     linear_layer = layer_pair.linear_layer
     # Each columnd corresponds to the prior layer
-    print(linear_layer.weight.shape)
-    # print(previous_layer.weight.shape)
     negativity = torch.sum(linear_layer.weight < 0, axis=0)
-    # print("Minimums", min(negativity))
-    # print("Maximums", max(negativity))
     summed_across_rows = torch.sum(linear_layer.weight, axis=0)
-    # print("Most Negative", min(summed_across_rows))
-    # print("Most negative bit", summed_across_rows.argmin(), negativity.argmax())
-    
+
     most_neg_in_val = summed_across_rows.argmin()
     most_neg_in_l1 = negativity.argmax()
-    if most_neg_in_val == most_neg_in_l1 and min(negativity) * 1.5 < max(negativity):
+    # print(min(negativity), max(negativity))
+    # TODO: this * 2 is a bit arbitrary. Maybe we should use a different threshold
+    # if most_neg_in_val == most_neg_in_l1 and min(negativity) * 1.5 < max(negativity):
+    # print(summed_across_rows.min())
+    if min(negativity) * 2 < max(negativity) and summed_across_rows.min() < -8:
         return True
     return False
 
-def find_most_negative(layer_pair: LayerPair, n_negative = 10):
+
+def find_most_negative(layer_pair: LayerPair, n_negative=10) -> LayerPair:
     linear_layer = layer_pair.linear_layer
     summed_across_rows = torch.sum(linear_layer.weight, axis=0)
-    # TODO:
-    return summed_across_rows.argsort()[:n_negative]
+    # TODO: should sort in ascending value I think. So, this should be fine...
+    most_neg = summed_across_rows.argsort()[:n_negative]
+    layer_pair.set_most_negatives(most_neg, summed_across_rows[most_neg])
+    return layer_pair
 
 
+def get_most_negative_sets(model: torch.nn.Module) -> List[LayerPair]:
+    layer_pairs = find_linear_layer_pairs(model)
+    interesting_layer_pairs = [
+        layer_pair for layer_pair in layer_pairs if is_interesting_layer_pair(layer_pair)]
+    return [find_most_negative(layer_pair) for layer_pair in interesting_layer_pairs]
 
 
 if __name__ == "__main__":
     model_name = 'EleutherAI/pythia-70m'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
-    print(model)
+    # print(model.named_children)
+    most_neg = get_most_negative_sets(model)
+    print(most_neg)

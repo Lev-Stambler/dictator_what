@@ -1,0 +1,5 @@
+{
+  "python.pythonPath": "~/anaconda3/bin/python",
+  "python.venvPath": "~/anaconda3/envs",
+  "python.defaultInterpreterPath": "~/anaconda3/bin/python"
+}

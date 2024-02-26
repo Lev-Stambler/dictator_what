@@ -11,7 +11,7 @@ def load_data_and_model(dataset_name: str, model_name: str, device, n_data=-1) -
     # Load the model and tokenizer
     with torch.no_grad():
         tokenizer = AutoTokenizer.from_pretrained(
-            model_name, padding_side='left')
+            model_name)
         model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
         # model = transformer_lens.HookedTransformer.from_pretrained(
         #     model_name).to(device)
@@ -38,7 +38,7 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
     def encode(batch):
         # TODO: trunacate???
         # TODO: use not
-        return tokenizer(batch, truncation=False, padding=True, return_tensors='pt')
+        return tokenizer(batch, return_tensors='pt')
 
     # Encode the dataset
     # encoded_dataset = dataset.map(encode, batched=True, batch_size=batch_size)

@@ -16,7 +16,7 @@ def load_data_and_model(dataset_name: str, model_name: str, device, n_data=-1) -
         # model = transformer_lens.HookedTransformer.from_pretrained(
         #     model_name).to(device)
 
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    # tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     d = dataset['train']
     # TODO: randomize
     if n_data > 0:

@@ -64,7 +64,6 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
 
             output_generator = generator(
                 encoded_dataset[i * batch_size: (i + 1) * batch_size])
-            print("OUTPUTS GENERATOR", output_generator)
 
             # TODO: we want to also get an eos token? Maybe not for now...
             # Decode the output
@@ -72,11 +71,12 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
                 output, skip_special_tokens=True) for output in outputs]
 
             # Check if the output is equal to the expected output
-            for item, decoded_output in zip(batch['input_ids'], decoded_outputs):
+            for item, decoded_output, og in zip(batch['input_ids'], decoded_outputs, output_generator):
                 decd = tokenizer.decode(item, ignore_pad=True, skip_special_tokens=True)
                 print("################################################")
                 print("FOR ITEM", decd)
                 print("\nOUTPUT:", decoded_output)
+                print("OUTPUTS GENERATOR", og)
                 print("!" * 30)
                 # TODO: smarter
                 if decoded_output[0:1] == expected_output:

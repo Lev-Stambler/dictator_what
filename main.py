@@ -129,7 +129,7 @@ Supercalifragilisticexpialidoci"""
 
     # Load data and model
     dataset, tokenizer, model = load_data_and_model(
-        dataset_name, model_name, device, n_data=5)
+        dataset_name, model_name, device, n_data=100)
     # if tokenizer.pad_token is None:
     #     tokenizer.pad_token = tokenizer.eos_token
 

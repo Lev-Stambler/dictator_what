@@ -80,7 +80,7 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
                 print("FOR ITEM", decd)
                 lenl = len(decd)
                 # TODO: why -1?
-                out_new = decoded_output[lenl - 1:]
+                out_new = decoded_output[lenl:]
                 print("\nOUTPUT:", out_new)
                 print("!" * 30)
                 # TODO: smarter

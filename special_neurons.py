@@ -7,6 +7,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 class LayerPair:
     most_negatives: Union[None, torch.Tensor] = None
     most_negatives_vals: Union[None, torch.Tensor] = None
+    linear_layer: nn.Module
 
     def __init__(self, prev_layer_name: str, prev_layer: nn.Module, linear_layer_name: str, linear_layer: nn.Module):
         self.prev_layer = prev_layer
@@ -54,6 +55,12 @@ def is_interesting_layer_pair(layer_pair: LayerPair) -> bool:
         return True
     return False
 
+
+def ordered_magnitude_output(layer_pair: LayerPair):
+    linear_layer = layer_pair.linear_layer
+    all_weights: torch.tensor = linear_layer.weight.flatten()
+    sorted_tensor, indices = torch.sort(all_weights, descending=True)
+    return sorted_tensor, indices
 
 def find_most_negative(layer_pair: LayerPair, n_negative=10) -> LayerPair:
     linear_layer = layer_pair.linear_layer

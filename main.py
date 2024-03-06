@@ -96,13 +96,14 @@ def test_model_on_dictator_dataset(model: AutoModelForCausalLM, tokenizer: AutoT
 def main() -> None:
     dataset_name = 'NeelNanda/pile-10k'
     model_name = 'EleutherAI/pythia-160m'
+    model_name = 'EleutherAI/pythia-70m'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # device = torch.device("cpu")
 
     dictatorStrNonInstruct = \
         """
-umpires, the umpires, the umpires, the umpires, the umpires, the umpires"""
+umpires, the umpires, the umpires, the umpires, the umpires, the umpires, the umpires, the umpires, the umpires"""
     dictatorOutNonInstruct = ", the"
 
     dictatorStr = dictatorStrNonInstruct

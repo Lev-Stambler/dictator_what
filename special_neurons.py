@@ -58,7 +58,7 @@ def is_interesting_layer_pair(layer_pair: LayerPair) -> bool:
 
 def ordered_magnitude_output(layer_pair: LayerPair):
     linear_layer = layer_pair.linear_layer
-    all_weights: torch.tensor = linear_layer.weight.flatten()
+    all_weights: torch.tensor = linear_layer.weight
     sorted_tensor, indices = torch.sort(all_weights, descending=True)
     return sorted_tensor, indices
 

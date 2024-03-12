@@ -6,6 +6,7 @@ asttokens==2.4.1
 attrs==23.2.0
 beartype==0.14.1
 better-abc==0.0.3
+bitsandbytes==0.43.0
 certifi==2024.2.2
 charset-normalizer==3.3.2
 click==8.1.7

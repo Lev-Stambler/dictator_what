@@ -1,8 +1,7 @@
 import torch
 
-def to_onnx(model, input_shape, model_name: str = "model.onnx"):
-	# Create an example input that matches the model's expected input shape
-	example_input = torch.rand(*input_shape)
+def to_onnx(model, sample_input, model_name: str = "model.onnx"):
+	example_input = sample_input
 	# Assuming 'model' is your PyTorch model and 'example_input' is a tensor matching the input dimensions
 	torch.onnx.export(model,               # model being run
 	                  example_input,       # model input (or a tuple for multiple inputs)

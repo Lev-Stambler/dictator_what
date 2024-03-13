@@ -17,9 +17,9 @@ import transformers
 #         x = self.relu(x)
 #         return x
 
-def main():
+def main(model_name:str):
     # Load the ONNX model
-    model = onnx.load("model.onnx")
+    model = onnx.load(model_name)
 
     # Create a graph from the ONNX model
     G = nx.DiGraph()
@@ -39,17 +39,20 @@ def main():
             op_type = node.get('op', 'Unknown')  # Some nodes might not have an operation type
             if op_type != 'Unknown':
                 print(f'Node name: {node_name}, Operation: {op_type}')
-            print(node)
         else:
             print(f'Input/Tensor: {node_name}')
 
 if __name__ == "__main__":
     import torch_onnx
     model_name = 'EleutherAI/pythia-70m'
-    model_og = transformers.AutoModelForCausalLM.from_pretrained(model_name)
-    tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    sample_input = "Hello, my dog is cute"
-    inputs = tokenizer(sample_input, return_tensors="pt", padding=True)
-    torch_onnx.to_onnx(model_og, (inputs["input_ids"].shape), model_name + ".onnx")
-    main()
+    onnx_name = model_name.replace('/', '__') + ".onnx"
+    if False:
+        model_og = transformers.AutoModelForCausalLM.from_pretrained(model_name)
+        tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+        sample_input = "Hello, my dog is cute"
+        inputs = tokenizer(sample_input, return_tensors="pt", padding=True)
+        print(inputs)
+        # TODO: make the replacement type safe...
+        torch_onnx.to_onnx(model_og, inputs["input_ids"], onnx_name)
+    main(onnx_name)

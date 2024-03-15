@@ -66,7 +66,6 @@ class FixedAttentionMask(torch.nn.Module):
         # dynamically increase the causal mask with the key length, if needed.
         if key_length > self.bias.shape[-1]:
             self._init_bias({n_tokens}, device=key.device)
-        # causal_mask = self.attn.bias[:, :, key_length - query_length : key_length, :key_length]
         causal_mask = self.bias
         # A cheap way of doing the above: TODO: MAYBE HARDCODE THIS IN!
 
@@ -137,8 +136,8 @@ class FixedAttentionMask(torch.nn.Module):
         def rotate_half(x):
             # Rotates half the hidden dims of the input.
             x1 = self.slice_rorate_half_1(x)
-            x2 = self.slice_rorate_half_2(x)
-            return torch.cat((-x2, x1), dim=-1)
+            x2 = self.slice_rorate_half_2(x) * -1
+            return torch.cat((x2, x1), dim=-1)
 
         def apply_rotary_embed(q, k, cos, sin, position_ids):
             cos = cos[position_ids]

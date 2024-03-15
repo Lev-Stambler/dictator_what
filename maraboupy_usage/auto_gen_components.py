@@ -203,7 +203,7 @@ class FixedAttentionMask(torch.nn.Module):
 
 
 if __name__ == '__main__':
-    QKV_path = 'qkv_copier.py'
+    QKV_path = 'tmp/qkv_copier.py'
     gen_qkv_copier(QKV_path, n_tokens=2, num_heads=8, hidden_size=64)
     gen_attn_head_unrolled('tmp/attn_head.py', 'tmp.qkv_copier',
                            n_tokens=2, num_heads=8, head_hidden_size=64)

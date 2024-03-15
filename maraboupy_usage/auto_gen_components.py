@@ -136,7 +136,7 @@ class FixedAttentionMask(torch.nn.Module):
         def rotate_half(x):
             # Rotates half the hidden dims of the input.
             x1 = self.slice_rorate_half_1(x)
-            x2 = self.slice_rorate_half_2(x) * -1
+            x2 = self.slice_rorate_half_2(x) # TODO: * -1
             return torch.cat((x2, x1), dim=-1)
 
         def apply_rotary_embed(q, k, cos, sin, position_ids):

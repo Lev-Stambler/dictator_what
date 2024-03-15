@@ -42,6 +42,7 @@ class FixedAttentionMask(torch.nn.Module):
         # self.new_qkv_shape = ({n_tokens}, self.attn.num_attention_heads, 3 * self.attn.head_size)
         self.QKV_copier = QKVCopier()
         self.attention_mask = torch.ones((1, {n_tokens}), dtype=torch.int)
+        self.flip_sign = torch.nn.Parameter(torch.tensor(-1.0))
     
     def _init_bias(self, max_positions, device=None):
         self.register_buffer(
@@ -136,7 +137,7 @@ class FixedAttentionMask(torch.nn.Module):
         def rotate_half(x):
             # Rotates half the hidden dims of the input.
             x1 = self.slice_rorate_half_1(x)
-            x2 = self.slice_rorate_half_2(x) # TODO: * -1
+            x2 = self.slice_rorate_half_2(x) * self.flip_sign
             return torch.cat((x2, x1), dim=-1)
 
         def apply_rotary_embed(q, k, cos, sin, position_ids):
@@ -188,7 +189,7 @@ class FixedAttentionMask(torch.nn.Module):
 
     start_str += f"""
         # Reshape outputs
-        attn_output = torch.cat([{", ".join("attn_outputs_" + str(i) for i in range(num_heads))}], dim=-1)
+        attn_output = torch.cat(({", ".join("attn_outputs_" + str(i) for i in range(num_heads))}), dim=-1)
         attn_output = self.attn.dense(attn_output)
 
         # outputs = (attn_output, present)

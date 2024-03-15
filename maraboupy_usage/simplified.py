@@ -1,12 +1,6 @@
 import torch
 from tmp.attn_head import FixedAttentionMask
 
-
-embed_linear = torch.nn.Linear(
-    embd_matrix.shape[0], embd_matrix.shape[1], bias=False)
-embed_linear.weight = torch.nn.Parameter(embd_matrix.T)
-
-
 class SimplfiedLayerNorm(torch.nn.Module):
     def __init__(self, layernorm: torch.nn.LayerNorm) -> None:
         super().__init__()
@@ -40,10 +34,14 @@ class SimplfiedLayerNorm(torch.nn.Module):
 
 class ModelSel(torch.nn.Module):
     def __init__(self, model_og: torch.nn.Module) -> None:
-        super().__init__(model_og)
+        super().__init__()
+        embd_matrix = model_og.gpt_neox.embed_in.weight
+        embed_linear = torch.nn.Linear(
+            embd_matrix.shape[0], embd_matrix.shape[1], bias=False)
+        embed_linear.weight = torch.nn.Parameter(embd_matrix.T)
         self.embed_linear = embed_linear
         self.layer_norm = SimplfiedLayerNorm(model_og.gpt_neox.layers[0].input_layernorm)
-        self.attn = FixedAttentionMask(model_og.gpt_neox.layers[0].attn)
+        self.attn = FixedAttentionMask(model_og.gpt_neox.layers[0].attention)
 
     def forward(self, x):
         x = self.embed_linear(x)
@@ -64,6 +62,3 @@ class ModelSel(torch.nn.Module):
 #     # TODO: VERIFY THIS JAZZ
 # )
 
-
-model_sel = ModelSel()
-model_sel

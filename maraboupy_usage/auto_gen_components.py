@@ -217,7 +217,8 @@ class FixedAttentionMask(torch.nn.Module):
         # Compute token offset for rotary embeddings (when decoding)
         seq_len = key.shape[-2]
         # TODO: IS THIS PROBLEM?
-        cos, sin = self.rotary_emb(value)
+        cos = self.rotary_emb.cos_cached
+        sin = self.rotary_emb.sin_cached
         print(query_rot.shape, key_rot.shape, cos.shape, sin.shape, position_ids.shape)
         query, key = apply_rotary_embed(query_rot, key_rot, cos, sin, position_ids)
 

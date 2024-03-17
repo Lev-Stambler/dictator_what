@@ -20,27 +20,75 @@ class QKVCopier(torch.nn.Module):
     return start_str
 
 
-def gen_attn_head_unrolled(save_path: str, qkv_copier_path: str, n_tokens: int, num_heads: int, head_hidden_size: int):
+def gen_rotary_embedding(save_path: str, seq_len: int):
+    start_str = IMPORT_START + f"""
+class GPTNeoXRotaryEmbedding(torch.nn.Module):
+    # Copied from transformers.models.mistral.modeling_mistral.MistralRotaryEmbedding.__init__
+    def __init__(self, dim, max_position_embeddings={seq_len}, base=10000, device=None):
+        super().__init__()
+
+        self.dim = dim
+        self.max_position_embeddings = max_position_embeddings
+        self.base = base
+        inv_freq = 1.0 / (self.base ** (torch.arange(0, self.dim, 2, dtype=torch.int64).float() / self.dim))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+
+        # Build here to make `torch.jit.trace` work.
+        self._set_cos_sin_cache(
+            seq_len={seq_len}, device=self.inv_freq.device, dtype=torch.get_default_dtype()
+        )
+
+    def _set_cos_sin_cache(self, seq_len, device, dtype):
+        self.max_seq_len_cached = seq_len
+        t = torch.arange(self.max_seq_len_cached, device=device, dtype=torch.int64).type_as(self.inv_freq)
+
+        freqs = torch.outer(t, self.inv_freq)
+        # Different from paper, but it uses a different permutation in order to obtain the same calculation
+        emb = torch.cat((freqs, freqs), dim=-1)
+        self.register_buffer("cos_cached", emb.cos(), persistent=False)
+        self.register_buffer("sin_cached", emb.sin(), persistent=False)
+
+    def forward(self, x):
+        # x: [bs, num_attention_heads, {seq_len}, head_size]
+        # We use a fixed seq len here
+        # if seq_len > self.max_seq_len_cached:
+        #     self._set_cos_sin_cache(seq_len=seq_len, device=x.device, dtype=x.dtype)
+
+        # self.cos_cached[:{seq_len}],
+        # self.sin_cached[:{seq_len}],
+        return (
+            self.cos_cached,
+            self.sin_cached,
+        )
+
+"""
+    open(save_path, 'w').write(start_str + '\n')
+
+
+def gen_attn_head_unrolled(save_path: str, qkv_copier_path: str, rotary_embed_path: str, n_tokens: int, num_heads: int, head_hidden_size: int):
     start_str = IMPORT_START + f"""
 from {qkv_copier_path} import QKVCopier
+from {rotary_embed_path} import GPTNeoXRotaryEmbedding
 """ + f"""
 class FixedAttentionMask(torch.nn.Module):
 
     def __init__(self, attention_head_og) -> None:
         super().__init__()
+        # TODO: IDK HERE!!! 16 always?
+        self.rotary_dim = 16
         self.attn = attention_head_og
         self._init_bias({n_tokens})
         self.slice_query = Slicer({3 * head_hidden_size}, 0, {head_hidden_size})
         self.slice_value = Slicer({3 * head_hidden_size}, {head_hidden_size}, {head_hidden_size})
         self.slice_key = Slicer({3 * head_hidden_size}, {head_hidden_size} * 2, {head_hidden_size})
-        # TODO: IDK HERE!!! 16 always?
-        self.slice_rotary = Slicer({head_hidden_size}, 0, {16})
-        self.slice_non_rotary = Slicer({head_hidden_size}, {16}, {head_hidden_size} - 16)
-        self.slice_rorate_half_1 = Slicer(16, 0, 8)
-        self.slice_rorate_half_2 = Slicer(16, 8, 8)
+        self.slice_rotary = Slicer({head_hidden_size}, 0, self.rotary_dim)
+        self.slice_non_rotary = Slicer({head_hidden_size}, self.rotary_dim, {head_hidden_size} - self.rotary_dim)
+        self.slice_rorate_half_1 = Slicer(self.rotary_dim, 0, self.rotary_dim // 2)
+        self.slice_rorate_half_2 = Slicer(self.rotary_dim, self.rotary_dim // 2, self.rotary_dim // 2)
         # QKV_last_size = ({n_tokens},)
         # self.new_qkv_shape = ({n_tokens}, self.attn.num_attention_heads, 3 * self.attn.head_size)
         self.QKV_copier = QKVCopier()
+        self.rotary_emb = GPTNeoXRotaryEmbedding(self.rotary_dim)
         self.attention_mask = torch.ones((1, {n_tokens}), dtype=torch.int)
         self.flip_sign = torch.nn.Parameter(torch.tensor(-1.0))
     
@@ -166,7 +214,7 @@ class FixedAttentionMask(torch.nn.Module):
         # Compute token offset for rotary embeddings (when decoding)
         seq_len = key.shape[-2]
         # TODO: IS THIS PROBLEM?
-        cos, sin = self.attn.rotary_emb(value, seq_len=seq_len)
+        cos, sin = self.rotary_emb(value)
         print(query_rot.shape, key_rot.shape, cos.shape, sin.shape, position_ids.shape)
         query, key = apply_rotary_embed(query_rot, key_rot, cos, sin, position_ids)
 
@@ -204,6 +252,9 @@ class FixedAttentionMask(torch.nn.Module):
 
 if __name__ == '__main__':
     QKV_path = 'tmp/qkv_copier.py'
+    rotary_path = 'tmp/rotary_embedding.py'
     gen_qkv_copier(QKV_path, n_tokens=2, num_heads=8, hidden_size=64)
+    gen_rotary_embedding(rotary_path, seq_len=2)
     gen_attn_head_unrolled('tmp/attn_head.py', 'tmp.qkv_copier',
+                           'tmp.rotary_embedding',
                            n_tokens=2, num_heads=8, head_hidden_size=64)
